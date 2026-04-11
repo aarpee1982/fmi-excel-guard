@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: fmi-excel-guard
+Version: 0.1.0
+Summary: Streamlit app for strict FMI Excel upload validation.
+Requires-Python: >=3.11
+Requires-Dist: beautifulsoup4>=4.12.3
+Requires-Dist: openai>=1.75.0
+Requires-Dist: openpyxl>=3.1.5
+Requires-Dist: pandas>=2.2.3
+Requires-Dist: python-docx>=1.1.2
+Requires-Dist: streamlit>=1.44.1
