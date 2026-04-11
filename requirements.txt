@@ -1,3 +1,4 @@
+-e .
 beautifulsoup4>=4.12.3
 openai>=1.75.0
 openpyxl>=3.1.5
