@@ -423,16 +423,12 @@ with tab_paste:
     pasted_text = st.text_area(
         "Paste one article",
         height=320,
-        placeholder="Paste one article here. Maximum 5,000 words.",
+        placeholder="Paste one article here.",
         key=f"pasted_text_{ui_nonce}",
     )
     pasted_word_count = _count_words(pasted_text)
-    st.caption(f"Word count: {pasted_word_count} / 5000")
+    st.caption(f"Word count: {pasted_word_count}")
     st.markdown("</div>", unsafe_allow_html=True)
-
-    if pasted_word_count > 5000:
-        st.error("Pasted article exceeds the 5,000-word limit.")
-        st.stop()
 
     if pasted_text.strip():
         record = load_market_record_from_text(
