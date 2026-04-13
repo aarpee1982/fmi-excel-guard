@@ -30,6 +30,7 @@ def _reset_for_next_run() -> None:
     st.session_state["run_error"] = None
     st.session_state["run_summary"] = None
     st.session_state["run_status"] = None
+    st.session_state["active_run"] = False
     st.session_state["ui_nonce"] = st.session_state.get("ui_nonce", 0) + 1
 
 
@@ -72,6 +73,34 @@ FACTS = [
 ]
 
 
+@st.cache_data(show_spinner=False, ttl=3600)
+def _load_trivia_facts(limit: int = 120) -> list[dict[str, str]]:
+    facts: list[dict[str, str]] = []
+    for value in range(1, limit + 1):
+        try:
+            import urllib.parse
+            import urllib.request
+
+            url = f"https://numbersapi.com/{value}/trivia?json"
+            with urllib.request.urlopen(url, timeout=4) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+            text = str(payload.get("text", "")).strip()
+            if text:
+                facts.append(
+                    {
+                        "fact": text,
+                        "source": "Numbers API",
+                        "url": f"https://numbersapi.com/{value}/trivia",
+                    }
+                )
+        except Exception:
+            continue
+    return facts or FACTS
+
+
+TRIVIA_FACTS = _load_trivia_facts()
+
+
 def _render_run_status(status: dict[str, object]) -> str:
     return (
         '<div class="progress-card">'
@@ -87,7 +116,7 @@ def _render_run_status(status: dict[str, object]) -> str:
 
 
 def _render_fact_rotator() -> None:
-    fact_payload = json.dumps(FACTS)
+    fact_payload = json.dumps(TRIVIA_FACTS)
     components.html(
         f"""
         <div id="fact-panel" style="
@@ -346,6 +375,7 @@ with nav_col2:
         st.rerun()
 
 ui_nonce = st.session_state.get("ui_nonce", 0)
+st.session_state.setdefault("active_run", False)
 
 tab_upload, tab_paste = st.tabs(["Upload Word documents", "Paste article text"])
 
@@ -452,6 +482,7 @@ if input_key is not None:
             st.rerun()
 
         findings = []
+        st.session_state["active_run"] = True
         progress = st.progress(0.0)
         status = st.empty()
         detail_status = st.empty()
@@ -539,6 +570,7 @@ if input_key is not None:
             st.session_state["run_error"] = str(exc)
             st.session_state["run_summary"] = None
             st.session_state["run_status"] = None
+            st.session_state["active_run"] = False
         else:
             status.empty()
             detail_status.empty()
@@ -560,6 +592,7 @@ if input_key is not None:
                 "findings_so_far": len(findings),
                 "tokens_used_so_far": total_tokens,
             }
+            st.session_state["active_run"] = False
 
     stored_error = st.session_state.get("run_error")
     if stored_error:
@@ -568,7 +601,7 @@ if input_key is not None:
     findings = st.session_state.get("findings")
     run_summary = st.session_state.get("run_summary")
     run_status = st.session_state.get("run_status")
-    if run_status:
+    if run_status and st.session_state.get("active_run"):
         st.markdown(_render_run_status(run_status), unsafe_allow_html=True)
     if run_summary:
         st.caption(
@@ -618,4 +651,5 @@ else:
     st.session_state["findings"] = None
     st.session_state["run_error"] = None
     st.session_state["run_summary"] = None
+    st.session_state["active_run"] = False
     st.info("Upload up to 5 Word documents or paste 1 article to begin.")
